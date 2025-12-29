@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ImageBackground, Modal, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ImageBackground, Modal, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -23,7 +23,7 @@ const API_URL = ENV_API_URL;
 export default function LoginScreen({ navigation }) {
     const { t, i18n } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
-    const [isMerchantMode, setIsMerchantMode] = useState(false);
+    // Merchant App - always merchant mode (no toggle needed)
 
     // WalletConnect Hook
     const { address, isConnected } = useAccount();
@@ -83,19 +83,13 @@ export default function LoginScreen({ navigation }) {
 
             if (res.ok) {
                 console.log("[Auth] Success:", data);
-
-                let finalRole = 'CONSUMER';
-
-                if (isMerchantMode) {
-                    if (!data.is_merchant) {
-                        console.log("[Auth] New Merchant detected, redirecting to setup...");
-                        navigation.navigate('MerchantSetup', { user: data });
-                        return true;
-                    }
-                    finalRole = 'MERCHANT';
+                // Merchant App - always merchant mode
+                if (!data.is_merchant) {
+                    console.log("[Auth] New Merchant detected, redirecting to setup...");
+                    navigation.navigate('MerchantSetup', { user: data });
+                    return true;
                 }
-
-                navigation.navigate('Home', { user: data, role: finalRole });
+                navigation.navigate('Home', { user: data, role: 'MERCHANT' });
                 return true;
             } else {
                 console.error("[Auth] Failed:", data.error);
@@ -212,20 +206,8 @@ export default function LoginScreen({ navigation }) {
                             </View>
                         ) : (
                             <>
-                                <View style={styles.roleToggleContainer}>
-                                    <Text style={[styles.roleText, !isMerchantMode && styles.roleActive]}>{t('consumer')}</Text>
-                                    <Switch
-                                        trackColor={{ false: "#767577", true: COLORS.primary }}
-                                        thumbColor={isMerchantMode ? "#fff" : "#f4f3f4"}
-                                        ios_backgroundColor="#3e3e3e"
-                                        onValueChange={() => setIsMerchantMode(!isMerchantMode)}
-                                        value={isMerchantMode}
-                                        style={{ transform: [{ scaleX: .8 }, { scaleY: .8 }] }}
-                                    />
-                                    <Text style={[styles.roleText, isMerchantMode && styles.roleActive]}>{t('merchant')}</Text>
-                                </View>
-                                <Text style={styles.loginTitle}>{t('welcome')}, {isMerchantMode ? t('partner') : t('foodie')}</Text>
-                                <Text style={styles.loginSubtitle}>{isMerchantMode ? t('login_manage') : t('login_find')}</Text>
+                                <Text style={styles.loginTitle}>{t('welcome')}, {t('partner')}</Text>
+                                <Text style={styles.loginSubtitle}>{t('login_manage')}</Text>
 
                                 <SocialButton
                                     provider="google"
